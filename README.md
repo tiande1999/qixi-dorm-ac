@@ -4,7 +4,7 @@
 
 仓库同时包含 **可操作的网页演示** 和 **等待实物验证的控制器代码**。网页目前使用模拟数据，没有连接真实空调。
 
-[体验演示网站](https://qixi-dorm-ac-demo.beamygala1.chatgpt.site) · [新同伴先读这里](docs/START_HERE.md) · [目前完成了什么](docs/STATUS.md) · [四周计划](docs/planning/宿舍空调项目-给同伴的四周计划.md)
+[GitHub 仓库](https://github.com/tiande1999/qixi-dorm-ac) · [体验演示网站](https://qixi-dorm-ac-demo.beamygala1.chatgpt.site) · [新同伴先读这里](docs/START_HERE.md) · [目前完成了什么](docs/STATUS.md) · [四周计划](docs/planning/宿舍空调项目-给同伴的四周计划.md)
 
 ## 先看你要做哪件事
 
