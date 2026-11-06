@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1350" viewBox="0 0 1800 1350">
+<rect width="1800" height="1350" fill="#F3F6FA"/>
+<style>text{font-family:"Microsoft YaHei","Noto Sans CJK SC",sans-serif} .h{font-size:25px;font-weight:700}.b{font-size:19px;fill:#334155}.small{font-size:18px;fill:#64748B}</style>
+<text x="60" y="65" class="h" fill="#0F172A">宿舍空调自动关机 · 学习与实现地图</text>
+<text x="60" y="102" class="b">目标：门口累计人数为零 → 连续15分钟 → 自动发出独立OFF → 真实空调进入待机</text>
+<text x="60" y="135" class="small">两人 / 八周 / 新增器件约100元 / 单人通行原型 / 首次遥控学习 / 全天离线运行</text>
+<path d="M 720 625 C 660 625, 700 305, 670 305" fill="none" stroke="#2563EB" stroke-width="3" opacity="0.65"/>
+<rect x="50" y="180" width="620" height="260" rx="16" fill="white" stroke="#DCE3ED"/>
+<rect x="50" y="180" width="7" height="260" rx="3" fill="#2563EB"/>
+<text x="75" y="222" class="h" fill="#2563EB">01｜基础环境与低压供电</text>
+<text x="75" y="264" class="b">学：Python / 电路基础 / REPL / 下载与调试</text>
+<text x="75" y="297" class="b">做：核对型号 → 跑脚本 → 测电平 → 接外设</text>
+<text x="75" y="330" class="b">连：低压电源与保护电路服务全部模块</text>
+<text x="75" y="363" class="b">装：门内控制盒，高约1.3～1.5米</text>
+<text x="75" y="396" class="b">验：两块板独立运行，针脚与电压有记录</text>
+<path d="M 720 625 C 660 625, 700 605, 670 605" fill="none" stroke="#0891B2" stroke-width="3" opacity="0.65"/>
+<rect x="50" y="480" width="620" height="260" rx="16" fill="white" stroke="#DCE3ED"/>
+<rect x="50" y="480" width="7" height="260" rx="3" fill="#0891B2"/>
+<text x="75" y="522" class="h" fill="#0891B2">02｜双红外与门磁采集</text>
+<text x="75" y="564" class="b">学：GPIO / 中断 / 消抖 / 时间戳 / 事件队列</text>
+<text x="75" y="597" class="b">做：单路采集 → 双路记录 → 门口覆盖标定</text>
+<text x="75" y="630" class="b">连：A、B、门磁 → EG 输入</text>
+<text x="75" y="663" class="b">装：门锁侧；高约1米；前后间距约20厘米</text>
+<text x="75" y="696" class="b">验：远侧不漏检；门板运动不算人</text>
+<path d="M 720 625 C 660 625, 700 905, 670 905" fill="none" stroke="#7C3AED" stroke-width="3" opacity="0.65"/>
+<rect x="50" y="780" width="620" height="260" rx="16" fill="white" stroke="#DCE3ED"/>
+<rect x="50" y="780" width="7" height="260" rx="3" fill="#7C3AED"/>
+<text x="75" y="822" class="h" fill="#7C3AED">03｜进出识别与人数校准</text>
+<text x="75" y="864" class="b">学：状态机 / 轨迹回放 / 未知与异常状态</text>
+<text x="75" y="897" class="b">做：电脑验证 → EG累计 → 按键校准人数</text>
+<text x="75" y="930" class="b">连：原始事件 → 人数、可信标志、状态版本</text>
+<text x="75" y="963" class="b">规则：进+1，出−1；歧义暂停，重启未知</text>
+<text x="75" y="996" class="b">验：100次普通通行逐次对账</text>
+<path d="M 1080 625 C 1140 625, 1100 305, 1130 305" fill="none" stroke="#EA580C" stroke-width="3" opacity="0.65"/>
+<rect x="1130" y="180" width="620" height="260" rx="16" fill="white" stroke="#DCE3ED"/>
+<rect x="1130" y="180" width="7" height="260" rx="3" fill="#EA580C"/>
+<text x="1155" y="222" class="h" fill="#EA580C">04｜空调学习与红外执行</text>
+<text x="1155" y="264" class="b">学：载波 / 空调状态帧 / OFF / MOSFET驱动</text>
+<text x="1155" y="297" class="b">做：学两次 → 现场试发 → 重复OFF验证 → 保存</text>
+<text x="1155" y="330" class="b">连：原遥控器 → ESP；ESP → 发射头 → 空调</text>
+<text x="1155" y="363" class="b">装：学习头在盒前，发射头靠空调接收窗</text>
+<text x="1155" y="396" class="b">验：开着能关；已关不打开；换机重新学习</text>
+<path d="M 1080 625 C 1140 625, 1100 605, 1130 605" fill="none" stroke="#059669" stroke-width="3" opacity="0.65"/>
+<rect x="1130" y="480" width="620" height="260" rx="16" fill="white" stroke="#DCE3ED"/>
+<rect x="1130" y="480" width="7" height="260" rx="3" fill="#059669"/>
+<text x="1155" y="522" class="h" fill="#059669">05｜本地15分钟自动决策</text>
+<text x="1155" y="564" class="b">学：非阻塞计时 / 回绕处理 / 取消与复核</text>
+<text x="1155" y="597" class="b">做：有效零人数+门关稳定 → 900秒 → 许可</text>
+<text x="1155" y="630" class="b">连：人数、门磁、暂停、执行器状态 → EG</text>
+<text x="1155" y="663" class="b">规则：新通行/开门/异常取消；断网继续</text>
+<text x="1155" y="696" class="b">验：第899秒返回取消；每次空房仅一次</text>
+<path d="M 1080 625 C 1140 625, 1100 905, 1130 905" fill="none" stroke="#DB2777" stroke-width="3" opacity="0.65"/>
+<rect x="1130" y="780" width="620" height="260" rx="16" fill="white" stroke="#DCE3ED"/>
+<rect x="1130" y="780" width="7" height="260" rx="3" fill="#DB2777"/>
+<text x="1155" y="822" class="h" fill="#DB2777">06｜板间连接、交互与整体验收</text>
+<text x="1155" y="864" class="b">学：UART / CRC / 会话 / 握手 / OLED / 测试</text>
+<text x="1155" y="897" class="b">做：连两板 → 本地交互 → 故障注入 → 实机验收</text>
+<text x="1155" y="930" class="b">连：EG ↔ ESP；ESP → OLED；按键 → EG</text>
+<text x="1155" y="963" class="b">许可：准备 → 2秒临时标识 → 复核 → 发射</text>
+<text x="1155" y="996" class="b">验：旧帧无效；发送完成不等于空调状态反馈</text>
+<rect x="720" y="545" width="360" height="160" rx="22" fill="#14243C"/>
+<text x="750" y="590" class="h" fill="#FFFFFF">宿舍空调自动关机</text>
+<text x="750" y="628" font-size="20" fill="#CBD5E1">EG800Z 唯一现场决策主控</text>
+<text x="750" y="665" font-size="20" fill="#CBD5E1">ESP8266 学习、显示、执行</text>
+<rect x="50" y="1090" width="1700" height="200" rx="16" fill="#E7EEF8"/>
+<text x="75" y="1128" class="h" fill="#16365C">动手顺序：先证明空调能被关闭，再完成自动判断</text>
+<text x="75" y="1165" class="b">W1 环境供电 → W2 真实OFF → W3 门口采集 → W4 人数状态机 → W5 本地15分钟闭环</text>
+<text x="75" y="1200" class="b">W6 固定安装与故障测试 → W7 现场对账 → W8 文档、日志、视频与交接</text>
+<text x="75" y="1240" class="small">当前：已有源码，49项电脑逻辑测试通过；ESP编译、引脚电平、现场计数与真实关机仍待验证。</text>
+<text x="75" y="1270" class="small">详细学习清单、接口和AI接手约定见配套Markdown；.mm文件可在支持FreeMind格式的软件中编辑。</text>
+</svg>

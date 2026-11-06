@@ -1,0 +1,27 @@
+# Local dependencies and generated build output
+**/node_modules/
+**/.pio/
+**/__pycache__/
+*.py[cod]
+.venv/
+venv/
+artifacts/
+*.log
+.DS_Store
+Thumbs.db
+
+# Local credentials, device captures and platform-specific site identity
+.env
+.env.*
+!.env.example
+**/.openai/
+**/.cloudbase/
+**/auth.json
+*.pem
+*.key
+*.bin
+*.elf
+*.map
+local-recordings/
+
+# web/dist is intentionally versioned: this is a buildless website.
