@@ -16,7 +16,7 @@ export function notificationGate({secure,embedded,ios,standalone,supported,permi
   return {code:'ask',title:'等待你开启通知',detail:'点击按钮后才会申请系统权限。拒绝或暂不允许，都不会影响页面内提醒。'};
 }
 export function reminderEpisode(s){
-  return s.phase==='countdown'&&s.emptyId&&s.start!==null&&s.remaining>0&&s.count===0&&s.trusted&&s.door&&!s.paused&&s.eg&&s.esp&&s.paired&&!s.learning?s.emptyId:null;
+  return (s.mode==='manual'?s.phase==='awaiting':s.phase==='countdown'&&s.remaining>0)&&s.emptyId&&s.start!==null&&s.count===0&&s.trusted&&s.door&&!s.paused&&s.eg&&s.esp&&s.paired&&!s.learning?s.emptyId:null;
 }
 // A notification only opens the app. It never grants permission to send OFF.
 export class ReminderDelivery {
@@ -27,7 +27,7 @@ export class ReminderDelivery {
     this.current=episode;const generation=++this.generation;
     const shouldShow=episode&&this.seen!==episode;
     if(shouldShow)this.seen=episode;
-    const body=`提醒发出时剩余 ${Math.ceil(s.remaining/60)} 分钟。可回到页面提前确认；未确认则按模拟规则到点执行。`;
+    const body=s.mode==='manual'?'已等待 15 分钟，请回到演示页面核实并确认。':`提醒发出时剩余 ${Math.ceil(s.remaining/60)} 分钟。可回到页面提前确认；未确认则按模拟规则到点执行。`;
     this.pending=(this.pending||Promise.resolve()).catch(()=>{}).then(async()=>{
       await this.clear();
       if(shouldShow&&generation===this.generation)await this.show('栖息 · 模拟空房提醒',body);

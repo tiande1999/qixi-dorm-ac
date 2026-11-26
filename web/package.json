@@ -1,1 +1,13 @@
-{"name":"qixi-dorm-demo","private":true,"type":"module","scripts":{"test":"node --test tests/*.test.mjs","start":"python -m http.server 4173 --directory dist"}}
+{
+  "name": "habitat-pwa",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "start": "python -m http.server 4173 --directory dist",
+    "build:demo": "node build.mjs demo",
+    "build:live": "node build.mjs live",
+    "preview:demo": "python -m http.server 4173 --bind 127.0.0.1 --directory ../artifacts/habitat-demo",
+    "preview:live": "python -m http.server 4174 --bind 127.0.0.1 --directory ../artifacts/habitat-live"
+  }
+}

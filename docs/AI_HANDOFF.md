@@ -6,5 +6,5 @@
 - `controller.py` 决定权限，`link.py` 与 ESP 的执行保护构成短时握手。
 - `cloud.py` 是飞鸢适配边界，`diagnose.py` 可在 QPYcom 核验 SDK。
 - `firmware/esp8266/src/sim_receiver.cpp` 是独立红外接收程序，LED 对应模拟空调。
-- `web/dist/` 是纯网页演示。固定 900 秒，历史浏览器偏好只能恢复房型与引导状态。PWA 最终用途待定。
+- `web/dist/` 是纯网页演示。固定 900 秒，历史浏览器偏好只能恢复房型与引导状态。Live 已有独立构建，接入见 [Live 接入契约](HABITAT_LIVE.md)。
 - 开发时执行 `python tools/check.py`。PC 测试、ESP 构建、板卡连接和真实现场验收应分别记录。

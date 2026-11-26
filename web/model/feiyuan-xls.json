@@ -1,0 +1,364 @@
+[
+  {
+    "id": 1,
+    "name": "person_count",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "INT",
+    "min": 0,
+    "max": 100
+  },
+  {
+    "id": 2,
+    "name": "count_status",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "ENUM",
+    "values": [
+      0,
+      1,
+      2
+    ]
+  },
+  {
+    "id": 3,
+    "name": "door_status",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "ENUM",
+    "values": [
+      0,
+      1,
+      2
+    ]
+  },
+  {
+    "id": 4,
+    "name": "device_mode",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "ENUM",
+    "values": [
+      0,
+      1
+    ]
+  },
+  {
+    "id": 5,
+    "name": "state_version",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "INT",
+    "min": 0,
+    "max": 2147483647
+  },
+  {
+    "id": 6,
+    "name": "countdown_seconds",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "INT",
+    "min": 0,
+    "max": 900
+  },
+  {
+    "id": 7,
+    "name": "network_status",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "ENUM",
+    "values": [
+      0,
+      1,
+      2
+    ]
+  },
+  {
+    "id": 8,
+    "name": "sim_ac_state",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "BOOL"
+  },
+  {
+    "id": 9,
+    "name": "last_error",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "TEXT",
+    "length": 128
+  },
+  {
+    "id": 10,
+    "name": "shutdown_pending",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "BOOL"
+  },
+  {
+    "id": 11,
+    "name": "boot_session",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "TEXT",
+    "length": 64
+  },
+  {
+    "id": 12,
+    "name": "paused",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "BOOL"
+  },
+  {
+    "id": 13,
+    "name": "calibrate_count",
+    "kind": "SERVICE",
+    "call": "ASYNC",
+    "input": [
+      23,
+      24,
+      34,
+      35,
+      25
+    ],
+    "output": [
+      28,
+      29
+    ]
+  },
+  {
+    "id": 14,
+    "name": "confirm_shutdown",
+    "kind": "SERVICE",
+    "call": "ASYNC",
+    "input": [
+      26,
+      27,
+      24,
+      34,
+      35,
+      25
+    ],
+    "output": [
+      28,
+      29
+    ]
+  },
+  {
+    "id": 15,
+    "name": "cancel_shutdown",
+    "kind": "SERVICE",
+    "call": "ASYNC",
+    "input": [
+      27,
+      24,
+      34,
+      35,
+      25
+    ],
+    "output": [
+      28,
+      29
+    ]
+  },
+  {
+    "id": 16,
+    "name": "pause_control",
+    "kind": "SERVICE",
+    "call": "ASYNC",
+    "input": [
+      24,
+      34,
+      35,
+      25
+    ],
+    "output": [
+      28,
+      29
+    ]
+  },
+  {
+    "id": 17,
+    "name": "resume_control",
+    "kind": "SERVICE",
+    "call": "ASYNC",
+    "input": [
+      24,
+      34,
+      35,
+      25
+    ],
+    "output": [
+      28,
+      29
+    ]
+  },
+  {
+    "id": 18,
+    "name": "set_device_mode",
+    "kind": "SERVICE",
+    "call": "ASYNC",
+    "input": [
+      30,
+      24,
+      34,
+      35,
+      25
+    ],
+    "output": [
+      28,
+      29
+    ]
+  },
+  {
+    "id": 19,
+    "name": "shutdown_reminder",
+    "kind": "EVENT",
+    "level": "INFO",
+    "output": [
+      1,
+      27,
+      5,
+      11
+    ]
+  },
+  {
+    "id": 20,
+    "name": "count_anomaly",
+    "kind": "EVENT",
+    "level": "WARN",
+    "output": [
+      2,
+      31
+    ]
+  },
+  {
+    "id": 21,
+    "name": "control_result",
+    "kind": "EVENT",
+    "level": "INFO",
+    "output": [
+      24,
+      32,
+      29
+    ]
+  },
+  {
+    "id": 22,
+    "name": "device_fault",
+    "kind": "EVENT",
+    "level": "ERROR",
+    "output": [
+      33,
+      29
+    ]
+  },
+  {
+    "id": 23,
+    "name": "target_count",
+    "kind": "PROPERTY",
+    "access": "RW",
+    "type": "INT",
+    "min": 0,
+    "max": 100
+  },
+  {
+    "id": 24,
+    "name": "request_id",
+    "kind": "PROPERTY",
+    "access": "RW",
+    "type": "TEXT",
+    "length": 64
+  },
+  {
+    "id": 25,
+    "name": "expires_at",
+    "kind": "PROPERTY",
+    "access": "RW",
+    "type": "TEXT",
+    "length": 32
+  },
+  {
+    "id": 26,
+    "name": "verified",
+    "kind": "PROPERTY",
+    "access": "RW",
+    "type": "BOOL"
+  },
+  {
+    "id": 27,
+    "name": "shutdown_request_id",
+    "kind": "PROPERTY",
+    "access": "RW",
+    "type": "TEXT",
+    "length": 64
+  },
+  {
+    "id": 28,
+    "name": "accepted",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "BOOL"
+  },
+  {
+    "id": 29,
+    "name": "message",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "TEXT",
+    "length": 128
+  },
+  {
+    "id": 30,
+    "name": "target_mode",
+    "kind": "PROPERTY",
+    "access": "RW",
+    "type": "ENUM",
+    "values": [
+      0,
+      1
+    ]
+  },
+  {
+    "id": 31,
+    "name": "reason",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "TEXT",
+    "length": 128
+  },
+  {
+    "id": 32,
+    "name": "success",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "BOOL"
+  },
+  {
+    "id": 33,
+    "name": "error_code",
+    "kind": "PROPERTY",
+    "access": "R",
+    "type": "INT",
+    "min": 0,
+    "max": 65535
+  },
+  {
+    "id": 34,
+    "name": "expected_boot_session",
+    "kind": "PROPERTY",
+    "access": "RW",
+    "type": "TEXT",
+    "length": 64
+  },
+  {
+    "id": 35,
+    "name": "expected_state_version",
+    "kind": "PROPERTY",
+    "access": "RW",
+    "type": "INT",
+    "min": 0,
+    "max": 2147483647
+  }
+]

@@ -1,6 +1,6 @@
 import {platformHint,embeddedBrowser,notificationGate,ReminderDelivery} from './phone-support.js';
 
-const KEY='qixi.notifications.v1';
+const KEY='habitat.demo.notifications.v1';
 const safe=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const SOURCES={apple:'https://webkit.org/blog/13878/web-push-for-web-apps-on-ios-and-ipados/',android:'https://support.google.com/chrome/answer/9658361?hl=zh-Hans&co=GENIE.Platform%3DAndroid',background:'https://developer.mozilla.org/en-US/docs/Web/Progressive_web_apps/Guides/Offline_and_background_operation'};
 const instructions={

@@ -6,5 +6,5 @@
 - 默认 REAL_CONFIRM。到期创建当次申请，只有可信成员确认才登记授权，否决和上下文变化清除授权。本版真实 OFF 发射禁用。
 - SIM_AUTO 只用于物理隔离的双 ESP8266 模拟闭环。REMIND_ONLY 用于只观察、提醒或真实接入条件不足的情况。
 - 优先使用飞鸢 IoT Core 和移联万物 App。EG800Z 与飞鸢用经核实兼容的官方 SDK。服务器架构无自建常驻 Node.js、Broker 或数据库。
-- PWA 为 `PENDING_DECISION`。代码和资源暂留供模拟；独立保留、嵌入 App 或采用其他方案待定。
+- PWA 独立提供 Habitat Demo 和 Habitat Live。移联万物 App 可辅助调试。
 - 历史正式交接文档 v2.0 原样保留。当前文档用于本轮开发。

@@ -12,9 +12,10 @@
 | [飞鸢接入](docs/FEIYUAN.md) | SDK 诊断、物模型、Mock 与待核实能力 |
 | [接线](hardware/wiring.md) | 电平、电源、安装和物理隔离 |
 | [当前状态](docs/STATUS.md) | 已验证的内容与验收缺口 |
-| [网页演示](web/README.md) | 现有 PWA，本地模拟 |
+| [Habitat PWA](web/README.md) | Demo 与 Live 构建、预览及部署 |
+| [Live 接入](docs/HABITAT_LIVE.md) | 网关、物模型与联调 |
 | [AI 接手](docs/AI_HANDOFF.md) | 代码入口和维护边界 |
 
-执行 `python tools/check.py` 运行 Python 和 Node.js 本地测试。Node.js 用于网页测试。真实设备目标是飞鸢 IoT Core 和移联万物 App，设备可以独立运行本地逻辑。
+执行 `python tools/check.py` 运行 Python 和 Node.js 本地测试。Node.js 用于网页测试。真实设备接入飞鸢 IoT Core，Habitat Live 提供独立入口，移联万物 App 可辅助调试，设备可以独立运行本地逻辑。
 
 `docs/planning/` 和 `docs/mindmaps/` 是早期方案档案，当前开发以最新决策为准。

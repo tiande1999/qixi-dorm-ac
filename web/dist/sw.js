@@ -1,6 +1,7 @@
 // Offline demo shell only. No background timer, push subscription or OFF execution.
-const CACHE='qixi-demo-shell-v4-1';
-const ASSETS=['./','./index.html','./styles.css','./setup.css','./phone.css','./app.js','./store.js','./preferences.js','./setup-ui.js','./phone.js','./phone-support.js','./favicon.svg','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png','./icons/apple-touch-icon.png'];
+const PREFIX='habitat-demo:'+self.registration.scope+':';
+const CACHE=PREFIX+'habitat-demo-v1';
+const ASSETS=['./','./index.html','./styles.css','./setup.css','./phone.css','./app.js','./ui.js','./store.js','./preferences.js','./setup-ui.js','./phone.js','./phone-support.js','./favicon.svg','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png','./icons/apple-touch-icon.png'];
 const assetURLs=new Set(ASSETS.map(p=>new URL(p,self.registration.scope).href));
 self.addEventListener('install',event=>{
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));
@@ -8,7 +9,7 @@ self.addEventListener('install',event=>{
 });
 self.addEventListener('activate',event=>{
   event.waitUntil((async()=>{
-    for(const key of await caches.keys())if(key.startsWith('qixi-demo-shell-')&&key!==CACHE)await caches.delete(key);
+    for(const key of await caches.keys())if(key.startsWith(PREFIX)&&key!==CACHE)await caches.delete(key);
     await self.clients.claim();
   })());
 });
@@ -19,14 +20,11 @@ self.addEventListener('fetch',event=>{
   const shellNavigation=event.request.mode==='navigate'&&(url.pathname===base.pathname||url.pathname===base.pathname+'index.html');
   const cleanURL=new URL(url);cleanURL.search='';cleanURL.hash='';
   if(!shellNavigation&&!assetURLs.has(cleanURL.href))return;
-  // Network first keeps published edits current; only known demo assets fall back.
+  // Serve a consistent release until the next worker activates.
   event.respondWith((async()=>{
-    try{return await fetch(event.request);}
-    catch{
-      const cache=await caches.open(CACHE);
-      const saved=await cache.match(shellNavigation?new URL('./index.html',base).href:cleanURL.href);
-      return saved||Response.error();
-    }
+    const cache=await caches.open(CACHE);
+    const key=shellNavigation?new URL('./index.html',base).href:cleanURL.href;
+    return (await cache.match(key)) || fetch(event.request);
   })());
 });
 self.addEventListener('notificationclick',event=>{

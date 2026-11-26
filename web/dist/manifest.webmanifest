@@ -1,7 +1,7 @@
 {
-  "id": "./",
-  "name": "栖息 · 宿舍空调助手",
-  "short_name": "栖息",
+  "id": "./habitat-demo",
+  "name": "Habitat Demo · 栖息",
+  "short_name": "栖息 Demo",
   "description": "宿舍空调交互演示：人数、空房计时、红外学习与提醒。",
   "lang": "zh-CN",
   "start_url": "./?source=homescreen",
