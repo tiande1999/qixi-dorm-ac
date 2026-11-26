@@ -18,6 +18,7 @@ class Link:
         self.out = []
         self.verified = False
         self.profile = ""
+        self.sim_ready = False
         self.learn_stage = "IDLE"
         self.remote_error = ""
 
@@ -34,8 +35,9 @@ class Link:
             self.q += 1
             self.out.append(self.message("h", q=self.q))
             self.last_hello = now
-        self.ctrl.set_link(self.healthy(now) and self.verified,
-                           self.profile if self.verified else "", now)
+        self.ctrl.set_executor_online(self.healthy(now))
+        self.ctrl.set_link(self.healthy(now) and self.sim_ready,
+                           "SIM-V1" if self.sim_ready else "", now)
         if self.pending:
             if not self.ctrl.can_commit(self.pending["version"], now):
                 self.cancel()
@@ -47,7 +49,7 @@ class Link:
             if version is not None:
                 self.command += 1
                 self.pending = {"id": self.command, "version": version, "since": now}
-                self.out.append(self.message("P", id=self.command, p=self.profile))
+                self.out.append(self.message("P", id=self.command, sv=version, mode="SIM_AUTO", action="SIM_OFF"))
 
     def cancel(self):
         if self.pending:
@@ -71,19 +73,22 @@ class Link:
             if esp != self.esp:
                 self.pending = None
                 self.sent_id = None
+                self.ctrl.set_executor_online(False)
                 self.ctrl.set_link(False, "", now)
             self.esp = esp
             self.last_q = q
             self.last_reply = now
+            self.ctrl.set_executor_online(True)
             self.verified = msg.get("ok") is True
             self.profile = profile
             self.learn_stage = str(msg.get("stage", "IDLE"))[:20]
             self.remote_error = str(msg.get("err", ""))[:32]
-            self.ctrl.set_link(self.verified, self.profile if self.verified else "", now)
+            self.sim_ready = msg.get("sim") is True
+            self.ctrl.set_link(self.sim_ready, "SIM-V1" if self.sim_ready else "", now)
         elif msg.get("s") != self.esp or not self.healthy(now):
             return
         elif kind == "R":
-            if not self.pending or msg.get("id") != self.pending["id"]:
+            if not self.pending or msg.get("id") != self.pending["id"] or msg.get("sv") != self.pending["version"]:
                 return
             token = msg.get("k")
             if not isinstance(token, str) or len(token) != 8:
@@ -91,7 +96,7 @@ class Link:
             if (diff(now, self.pending["since"]) < 1500
                     and self.ctrl.can_commit(self.pending["version"], now)):
                 self.out.append(self.message("C", id=self.pending["id"],
-                                             p=self.profile, k=token))
+                                             sv=self.pending["version"], mode="SIM_AUTO", action="SIM_OFF", k=token))
         elif kind == "A" and msg.get("id") == self.sent_id:
             if msg.get("result") == "ir_tx_finished":
                 self.ctrl.result = "ir_tx_finished"
@@ -111,7 +116,9 @@ class Link:
         approved = []
         for msg in output:
             if msg["t"] == "C":
-                if not self.pending or not self.ctrl.can_commit(self.pending["version"], now):
+                if (not self.pending or msg.get("id") != self.pending["id"]
+                        or msg.get("sv") != self.pending["version"]
+                        or not self.ctrl.can_commit(self.pending["version"], now)):
                     self.cancel()
                     continue
                 if diff(now, self.pending["since"]) >= 1500:
@@ -125,7 +132,7 @@ class Link:
         return approved
 
     def learn(self, action, now, **fields):
-        if not self.healthy(now):
+        if action == "test" or not self.healthy(now):
             return False
         self.cancel()
         self.ctrl.set_ui_mode("LEARN", now)

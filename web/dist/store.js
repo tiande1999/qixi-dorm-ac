@@ -1,5 +1,5 @@
 // Browser-only simulator. No network, serial port or real device commands.
-import {validSettings,DEFAULT_PREFERENCES} from './preferences.js';
+import {validSettings,DEFAULT_PREFERENCES,WAIT_SECONDS} from './preferences.js';
 export const SCENARIOS = [
   {id:'normal',name:'有人在寝',desc:'体验正常进出与人数变化',icon:'users'},
   {id:'empty',name:'最后一人离开',desc:'按预设时间等待，可提前确认关机',icon:'exit'},
@@ -13,7 +13,7 @@ export const SCENARIOS = [
 ];
 const copy = o => JSON.parse(JSON.stringify(o));
 export class DemoStore {
-  constructor(settings=DEFAULT_PREFERENCES){this.listeners=new Set();this.settings=validSettings(settings)?{roomCapacity:settings.roomCapacity,waitMinutes:settings.waitMinutes}:{roomCapacity:4,waitMinutes:15};this.runId=0;this.episodeSeq=0;this.reset('normal',false);}
+  constructor(settings=DEFAULT_PREFERENCES){this.listeners=new Set();this.settings=validSettings(settings)?{roomCapacity:settings.roomCapacity,waitMinutes:WAIT_SECONDS/60}:{roomCapacity:4,waitMinutes:WAIT_SECONDS/60};this.runId=0;this.episodeSeq=0;this.reset('normal',false);}
   subscribe(fn){this.listeners.add(fn);return ()=>this.listeners.delete(fn);}
   emit(){for(const f of this.listeners)f(this.snapshot());}
   snapshot(){return copy(this.s);}
@@ -23,7 +23,7 @@ export class DemoStore {
   }
   reset(scenario='normal',notify=true){
     this.runId++;this.episodeSeq=0;
-    this.s={...this.settings,delaySeconds:this.settings.waitMinutes*60,emptyId:null,time:16*3600+42*60,scenario,count:3,trusted:true,reason:'',door:true,doorSince:0,paused:false,mode:'hybrid',phase:'occupied',start:null,remaining:null,episodeDone:false,
+    this.s={...this.settings,delaySeconds:WAIT_SECONDS,emptyId:null,time:16*3600+42*60,scenario,count:3,trusted:true,reason:'',door:true,doorSince:0,paused:false,mode:'hybrid',phase:'occupied',start:null,remaining:null,episodeDone:false,
       eg:true,esp:true,cloud:true,feedback:true,paired:true,profile:'QX-OFF-001',ac:'running',speed:1,playing:true,outcome:'success',command:null,commandSeq:0,session:1,revision:0,
       learning:null,logs:[],logSeq:0,passages:[],dayIn:12,dayOut:9,trace:null,notice:'',member:'林同学',members:['林同学','陈同学','周同学','许同学','吴同学','赵同学'].slice(0,this.settings.roomCapacity)};
     this.s.doorSince=this.s.time-20;
@@ -47,12 +47,12 @@ export class DemoStore {
   eligible(){const s=this.s;return s.eg&&s.esp&&s.paired&&s.count===0&&s.trusted&&s.door&&!s.paused&&!s.learning;}
   canConfirm(){const s=this.s;return this.eligible()&&s.phase==='countdown'&&s.start!==null&&!s.episodeDone&&s.time-s.doorSince>=2;}
   configure(settings){
-    if(!validSettings(settings)){this.s.notice='请选择 4 / 6 人寝，等待时间需为 1～60 的整数分钟';return false;}
+    if(!validSettings(settings)){this.s.notice='请选择 4 或 6 人寝';return false;}
     if(this.s.command&&['executing','sent'].includes(this.s.command.status)){this.s.notice='请等待当前发射完成，再修改设置';return false;}
-    this.cancelPending('房间或等待时间已修改');this.settings={roomCapacity:settings.roomCapacity,waitMinutes:settings.waitMinutes};Object.assign(this.s,this.settings,{delaySeconds:settings.waitMinutes*60});
+    this.cancelPending('房型已修改');this.settings={roomCapacity:settings.roomCapacity,waitMinutes:WAIT_SECONDS/60};Object.assign(this.s,this.settings,{delaySeconds:WAIT_SECONDS});
     this.s.members=['林同学','陈同学','周同学','许同学','吴同学','赵同学'].slice(0,settings.roomCapacity);if(!this.s.members.includes(this.s.member))this.s.member=this.s.members[0];
     if(!['success','failed','unknown'].includes(this.s.phase))this.s.episodeDone=false;
-    this.log('房间设置已更新',settings.roomCapacity+' 人寝 · 等待 '+settings.waitMinutes+' 分钟；有倒计时则重新开始','user');this.s.notice='设置已保存，倒计时按新时长重新判断';this.tick(0);this.emit();return true;
+    this.log('房间设置已更新',settings.roomCapacity+' 人寝 · 固定等待 15 分钟','user');this.s.notice='设置已保存';this.tick(0);this.emit();return true;
   }
   cancelPending(reason){const s=this.s;if(s.command&&['requested','accepted'].includes(s.command.status)){s.command.status='cancelled';s.command.reason=reason;this.log('本次关机已取消',reason,'command');}s.start=null;s.remaining=null;s.emptyId=null;s.revision++;}
   createCommand(trigger='deadline'){const s=this.s;s.command={id:'DEMO-'+s.session+'-'+String(++s.commandSeq).padStart(3,'0'),trigger,session:s.session,profile:s.profile,revision:s.revision,status:'requested',created:s.time,expires:s.time+2,stageAt:s.time+.4};this.log('发起模拟关机请求',s.command.id+' · '+(trigger==='manual'?'成员提前确认':'预设等待时间已到')+' · 复核人数、门磁和运行状态','command');}
@@ -145,4 +145,4 @@ export class DemoStore {
     this.tick(0);this.emit();
   }
 }
-export const phaseInfo=s=>({occupied:['有人在寝','空调保持当前状态','green'],countdown:['空房倒计时','可提前确认；满 '+s.waitMinutes+' 分钟自动关机','green'],settling:['等待门关稳定','门关稳定 2 秒后开始计时','amber'],requested:['正在请求关机','重新检查全部执行条件','blue'],accepted:['执行器已接受','即将发送模拟 OFF','blue'],executing:['正在发送关机指令','发射已开始，无法撤回','blue'],sent:['指令已发送','正在等待模拟观察结果','blue'],success:['模拟关机完成','本次空房流程已完成','green'],failed:['模拟执行失败','本次不自动重试，请查看原因','red'],unknown:['结果暂时未知','已发送，无法确认空调是否关机','amber'],expired:['请求已过期','未执行关机，可重新开始演示','amber'],cancelled:['本次已取消','恢复后重新等待 '+s.waitMinutes+' 分钟','amber'],paused:['自动关机已暂停','恢复后重新判断空房条件','amber'],untrusted:['人数需要核对','通行出现歧义，自动关机已停止','amber'],'unknown-count':['人数未知','请先校准实际人数','amber'],offline:['主控设备离线','当前人数为最后记录，自动演示已停止','red'],'door-open':['门还开着','关门稳定后重新开始计时','amber'],'not-ready':['等待设备就绪','请检查执行器连接和关机配置','amber'],learning:['正在学习遥控器','自动关机暂停，跟随向导完成验证','blue']}[s.phase]||['状态更新中','请稍候','blue']);
+export const phaseInfo=s=>({occupied:['有人在寝','空调保持当前状态','green'],countdown:['空房倒计时','可提前确认；满 15 分钟自动关闭模拟空调','green'],settling:['等待门关稳定','门关稳定 2 秒后开始计时','amber'],requested:['正在请求关机','重新检查全部执行条件','blue'],accepted:['执行器已接受','即将发送模拟 OFF','blue'],executing:['正在发送关机指令','发射已开始，无法撤回','blue'],sent:['指令已发送','正在等待模拟观察结果','blue'],success:['模拟关机完成','本次空房流程已完成','green'],failed:['模拟执行失败','本次不自动重试，请查看原因','red'],unknown:['结果暂时未知','已发送，无法确认空调是否关机','amber'],expired:['请求已过期','未执行关机，可重新开始演示','amber'],cancelled:['本次已取消','恢复后重新等待 '+s.waitMinutes+' 分钟','amber'],paused:['自动关机已暂停','恢复后重新判断空房条件','amber'],untrusted:['人数需要核对','通行出现歧义，自动关机已停止','amber'],'unknown-count':['人数未知','请先校准实际人数','amber'],offline:['主控设备离线','当前人数为最后记录，自动演示已停止','red'],'door-open':['门还开着','关门稳定后重新开始计时','amber'],'not-ready':['等待设备就绪','请检查执行器连接和关机配置','amber'],learning:['正在学习遥控器','自动关机暂停，跟随向导完成验证','blue']}[s.phase]||['状态更新中','请稍候','blue']);

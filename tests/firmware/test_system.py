@@ -5,7 +5,7 @@ import unittest
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "firmware" / "eg800z"))
 from counter import Counter
-from controller import Controller
+from controller import Controller, SIM_AUTO
 from inputs import Ring, Debouncer, Buttons
 from link import Link
 from protocol import crc16, encode, decode, Decoder
@@ -23,7 +23,7 @@ def passage(controller, masks, start=100, step=100):
 
 
 def armed_empty(start=0):
-    c = Controller()
+    c = Controller(mode=SIM_AUTO, isolated=True)
     c.raw_inputs(0, True, True, start)
     c.set_link(True, "0000ABCD", start)
     assert c.calibrate(0, start)
@@ -35,30 +35,30 @@ class CounterTests(unittest.TestCase):
     def test_four_supported_paths(self):
         for path, expected in [(p, 1 if p[0] == 2 else -1) for p in Counter.PATHS]:
             with self.subTest(path=path):
-                counter = Counter()
+                counter = Counter(timeout_ms=3000)
                 events = [counter.feed(mask, n * 100) for n, mask in enumerate(path)]
                 self.assertEqual([x for x in events if x], [{"delta": expected}])
                 self.assertTrue(counter.idle())
 
     def test_duplicate_levels_do_not_double_count(self):
-        counter = Counter()
+        counter = Counter(timeout_ms=3000)
         events = [counter.feed(m, i * 100) for i, m in enumerate([2, 2, 3, 3, 1, 1, 0, 0])]
         self.assertEqual([e for e in events if e], [{"delta": 1}])
 
     def test_turnaround_is_ambiguous(self):
-        c = Counter()
+        c = Counter(timeout_ms=3000)
         events = [c.feed(m, i * 100) for i, m in enumerate([2, 3, 2, 0])]
         self.assertEqual([e for e in events if e], [{"fault": "ambiguous_passage"}])
 
     def test_simultaneous_start_and_clear(self):
-        c = Counter()
+        c = Counter(timeout_ms=3000)
         self.assertIn("fault", c.feed(3, 0))
         self.assertIsNone(c.feed(1, 100))
         self.assertIsNone(c.feed(0, 200))
         self.assertTrue(c.idle())
 
     def test_abandoned_single_sensor_times_out(self):
-        c = Counter()
+        c = Counter(timeout_ms=3000)
         c.feed(2, 100)
         c.feed(0, 200)
         self.assertFalse(c.idle())
@@ -66,14 +66,14 @@ class CounterTests(unittest.TestCase):
         self.assertTrue(c.idle())
 
     def test_late_second_zone_cannot_complete(self):
-        c = Counter()
+        c = Counter(timeout_ms=3000)
         c.feed(2, 0)
         c.feed(0, 100)
         self.assertIn("fault", c.feed(1, 3000))
         self.assertIsNone(c.feed(0, 3100))
 
     def test_timeout_across_wrap(self):
-        c = Counter()
+        c = Counter(timeout_ms=3000)
         c.feed(2, PERIOD - 1000)
         self.assertIsNone(c.tick(1999))
         self.assertIn("fault", c.tick(2000))
@@ -252,7 +252,7 @@ class ProtocolTests(unittest.TestCase):
 
 class LinkTests(unittest.TestCase):
     def setUp(self):
-        self.c = Controller()
+        self.c = Controller(mode=SIM_AUTO, isolated=True)
         self.c.raw_inputs(0, True, True, 0)
         self.c.calibrate(0, 0)
         self.link = Link("12345678", self.c)
@@ -262,7 +262,7 @@ class LinkTests(unittest.TestCase):
     def heartbeat(self, now, esp="ABCDEF12", verified=True, profile="0000ABCD"):
         self.link.update(now)
         self.link.receive({"v": 1, "t": "H", "e": self.link.boot, "s": esp,
-                           "q": self.link.q, "ok": verified, "p": profile}, now)
+                           "q": self.link.q, "ok": False, "sim": verified, "p": profile}, now)
         self.link.take_output(now)
 
     def prepare(self):
@@ -275,7 +275,7 @@ class LinkTests(unittest.TestCase):
 
     def ready(self, request, now=902100):
         self.link.receive({"v": 1, "t": "R", "e": self.link.boot,
-                           "s": self.link.esp, "id": request["id"], "k": "AABBCCDD"}, now)
+                           "s": self.link.esp, "id": request["id"], "sv": request["sv"], "k": "AABBCCDD"}, now)
 
     def test_full_handshake_dispatches_only_once(self):
         request = self.prepare()
@@ -335,7 +335,7 @@ class LinkTests(unittest.TestCase):
         self.assertEqual(self.c.result, "ir_tx_finished")
         self.assertEqual(self.c.status(902200)["ac_actual_state"], "unknown")
 
-    def test_unverified_profile_never_prepares(self):
+    def test_sim_disabled_never_prepares(self):
         self.heartbeat(901000, verified=False)
         self.link.update(902000)
         self.assertFalse(any(m["t"] == "P" for m in self.link.take_output(902000)))

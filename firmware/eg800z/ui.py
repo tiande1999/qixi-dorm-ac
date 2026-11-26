@@ -10,10 +10,7 @@ class UI:
     def handle(self, event, now):
         mode = self.ctrl.ui_mode
         if event == "pair_long":
-            if self.link.learn("start", now):
-                self.notice = "Send OFF twice"
-            else:
-                self.notice = "ESP not connected"
+            self.notice = "Real IR disabled"
             return
         if event == "confirm_long":
             if mode == "LEARN":
@@ -62,5 +59,5 @@ class UI:
         return ["DORM AC / LOCAL", "Count: %s %s" % (s["count"] if s["count"] is not None else "?", "OK" if s["trusted"] else "CHECK"),
                 "Door: " + ("closed" if s["door"] else "open"),
                 "ARMED" if s["armed"] else "PAUSED (switch)",
-                ("OFF in %ds" % s["remaining"]) if s["remaining"] is not None else ("ESP ready" if self.ctrl.link_ready else "ESP/unpaired"),
+                ("Wait %ds" % s["remaining"]) if s["remaining"] is not None else ("ESP ready" if self.ctrl.link_ready else "ESP/unpaired"),
                 s["result"] if s["result"] != "none" else self.notice]

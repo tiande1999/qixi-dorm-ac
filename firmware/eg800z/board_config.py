@@ -6,14 +6,23 @@ UART_NAME = None                  # e.g. actual supported 'UART1'; not preselect
 UART_TX_PAD = "TODO"              # physical silk/pad label, for wiring review
 UART_RX_PAD = "TODO"
 PINS = {                          # names must exist on machine.Pin
-    "a": None, "b": None, "door": None, "arm": None,
+    "trigger": None, "echo": None, "ky": None, "door": None, "arm": None,
     "plus": None, "minus": None, "confirm": None,
 }
-ACTIVE_LEVEL = {"a": 0, "b": 0, "door": 0, "arm": 0,
+ACTIVE_LEVEL = {"ky": 0, "door": 0, "arm": 0,
                 "plus": 0, "minus": 0, "confirm": 0}
 # door active means closed; arm active means RUN. DPDT switch: one pole
 # physically disconnects IR LED power, the other connects arm GPIO to GND.
-DEBOUNCE_MS = 10
+KY_DEBOUNCE_MS = 20
+ULTRASONIC_ENTER_MM = 550
+ULTRASONIC_RELEASE_MM = 650
+ULTRASONIC_PERIOD_MS = 70
+ULTRASONIC_STALE_MS = 250
+ULTRASONIC_ECHO_TIMEOUT_US = 25000
+PASSAGE_TIMEOUT_MS = 3500
+OUTER_SENSOR = 2                 # HC-SR04 outside zone, KY-032 inside zone; verify on site
+CONTROL_MODE = "REAL_CONFIRM"
+SIM_ISOLATION_VERIFIED = False
 BUTTON_DEBOUNCE_MS = 30
 DELAY_MS = 900000                 # real build refuses smaller values
 QUEUE_SIZE = 128
@@ -32,5 +41,5 @@ def validate():
         raise ValueError("Every signal needs a verified GPIO constant name")
     if len(set(PINS.values())) != len(PINS):
         raise ValueError("GPIO assignments must be unique")
-    if DELAY_MS < 900000:
+    if DELAY_MS != 900000:
         raise ValueError("Do not accelerate the real-AC controller")

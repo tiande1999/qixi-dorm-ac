@@ -1,15 +1,37 @@
-"""Hardware-independent local authority; there is deliberately no network input."""
+"""Local authority for occupancy and shutdown requests."""
 from counter import Counter
 from timebase import diff
 
 
+REAL_CONFIRM = "REAL_CONFIRM"
+SIM_AUTO = "SIM_AUTO"
+REMIND_ONLY = "REMIND_ONLY"
+WAIT_MS = 900000
+
+
+def in_work_window(local_time):
+    if not isinstance(local_time, tuple) or len(local_time) < 7:
+        return False
+    hour, weekday = local_time[3], local_time[6]
+    return type(hour) is int and type(weekday) is int and 0 <= weekday <= 4 and 8 <= hour < 18
+
+
 class Controller:
-    def __init__(self, delay_ms=900000, door_stable_ms=2000):
-        if delay_ms < 900000:
-            raise ValueError("Real controller delay must be at least 900000 ms")
+    def __init__(self, delay_ms=900000, door_stable_ms=2000, mode=REAL_CONFIRM, isolated=False, passage_ms=3500, outer_sensor=2):
+        if delay_ms != WAIT_MS:
+            raise ValueError("Controller delay is fixed at 900000 ms")
         self.delay_ms = delay_ms
         self.door_stable_ms = door_stable_ms
-        self.counter = Counter()
+        self.counter = Counter(passage_ms, outer_sensor)
+        if mode not in (REAL_CONFIRM, SIM_AUTO, REMIND_ONLY):
+            raise ValueError("invalid control mode")
+        self.mode = mode
+        self.isolated = isolated is True
+        self.work_window = False
+        self.online = False
+        self.application = None
+        self.confirmed_at = None
+        self.sensor_healthy = True
         self.count = None
         self.trusted = False
         self.reason = "boot_unknown"
@@ -18,6 +40,7 @@ class Controller:
         self.closed_since = None
         self.armed = False
         self.ui_mode = "RUN"
+        self.executor_online = False
         self.link_ready = False
         self.profile_id = ""
         self.version = 0
@@ -41,6 +64,31 @@ class Controller:
         self.version += 1
         self.empty_since = None
         self.pending_version = None
+
+        self.application = None
+        self.confirmed_at = None
+
+    def set_context(self, online, local_time, now):
+        context = (online is True, in_work_window(local_time))
+        if context != (self.online, self.work_window):
+            self.online, self.work_window = context
+            self.invalidate()
+
+    def member_decision(self, action, version, now):
+        """Called only after the gateway validates member identity and freshness."""
+        if action == "veto" and self.application is not None and version == self.version:
+            self.episode_done = True
+            self.invalidate()
+            self.result = "member_veto"
+            self.log("member_veto", now)
+            return True
+        if (action != "confirm" or self.application is None or version != self.version
+                or self.confirmed_at is not None or not self.eligible(now)
+                or not 0 <= diff(now, self.application) < 60000):
+            return False
+        self.confirmed_at = now
+        self.log("member_confirmed", now)
+        return True
 
     def fault(self, reason, now):
         self.invalidate()
@@ -90,7 +138,7 @@ class Controller:
     def calibrate(self, number, now):
         if type(number) is not int or not 0 <= number <= 99:
             return False
-        if self.raw_mask or not self.counter.idle():
+        if not self.sensor_healthy or self.raw_mask or not self.counter.idle():
             return False
         self.count = number
         self.trusted = True
@@ -110,6 +158,12 @@ class Controller:
                 self.reason = "recalibrate_after_learning"
             self.log("ui_mode", now, mode=mode)
 
+    def set_executor_online(self, online):
+        if online != self.executor_online:
+            self.executor_online = online
+            if self.mode == REAL_CONFIRM:
+                self.invalidate()
+
     def set_link(self, ready, profile_id, now):
         if (ready, profile_id) != (self.link_ready, self.profile_id):
             self.link_ready = ready
@@ -118,12 +172,13 @@ class Controller:
             self.log("link", now, ready=ready, profile=profile_id)
 
     def eligible(self, now):
-        return (self.count == 0 and self.trusted and self.counter.idle()
+        return (self.sensor_healthy and self.count == 0 and self.trusted and self.counter.idle()
                 and self.raw_mask == 0 and self.door_closed
                 and self.closed_since is not None
                 and diff(now, self.closed_since) >= self.door_stable_ms
                 and self.armed and self.ui_mode == "RUN"
-                and self.link_ready and bool(self.profile_id)
+                and (self.mode != SIM_AUTO or (self.link_ready and self.isolated))
+                and (self.mode != REAL_CONFIRM or (self.work_window and self.online and self.executor_online))
                 and not self.episode_done)
 
     def tick(self, now):
@@ -131,22 +186,34 @@ class Controller:
         if event:
             self._counter_event(event, now)
         if not self.eligible(now):
-            self.empty_since = None
-            self.pending_version = None
+            if self.empty_since is not None or self.application is not None:
+                self.invalidate()
             return False
         if self.empty_since is None:
             self.empty_since = now
-        return diff(now, self.empty_since) >= self.delay_ms
+        mature = diff(now, self.empty_since) >= self.delay_ms
+        if (self.mode == REAL_CONFIRM and self.application is not None
+                and diff(now, self.application) >= 60000):
+            self.episode_done = True
+            self.invalidate()
+            self.result = "application_expired"
+            return False
+        if mature and self.mode == REAL_CONFIRM and self.application is None:
+            self.application = now
+            self.log("off_application", now, version=self.version)
+        return mature
 
     def prepare(self, now):
-        if not self.tick(now) or self.pending_version is not None:
+        mature = self.tick(now)
+        # This firmware release has no verified member time/identity path to physical OFF.
+        if self.mode != SIM_AUTO or not mature or self.pending_version is not None:
             return None
         self.pending_version = self.version
         self.log("off_prepare", now)
         return self.version
 
     def can_commit(self, version, now):
-        return (self.pending_version == version == self.version
+        return (self.mode == SIM_AUTO and self.pending_version == version == self.version
                 and self.eligible(now) and self.empty_since is not None
                 and diff(now, self.empty_since) >= self.delay_ms)
 
@@ -170,4 +237,9 @@ class Controller:
                 "reason": self.reason, "door": self.door_closed,
                 "armed": self.armed, "mode": self.ui_mode,
                 "remaining": remaining, "version": self.version,
-                "result": self.result, "ac_actual_state": "unknown"}
+                "result": self.result, "ac_actual_state": "unknown",
+                "device_mode": self.mode, "network_status": self.online,
+                "count_status": "UNKNOWN" if self.count is None else ("NORMAL" if self.trusted else "SUSPECT"),
+                "application_version": self.version if self.application is not None else None,
+                "application_status": ("CONFIRMED" if self.confirmed_at is not None else "WAITING")
+                if self.application is not None else "NONE"}

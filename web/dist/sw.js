@@ -1,5 +1,5 @@
 // Offline demo shell only. No background timer, push subscription or OFF execution.
-const CACHE='qixi-demo-shell-v3-1';
+const CACHE='qixi-demo-shell-v4-1';
 const ASSETS=['./','./index.html','./styles.css','./setup.css','./phone.css','./app.js','./store.js','./preferences.js','./setup-ui.js','./phone.js','./phone-support.js','./favicon.svg','./manifest.webmanifest','./icons/icon-192.png','./icons/icon-512.png','./icons/icon-maskable-512.png','./icons/apple-touch-icon.png'];
 const assetURLs=new Set(ASSETS.map(p=>new URL(p,self.registration.scope).href));
 self.addEventListener('install',event=>{

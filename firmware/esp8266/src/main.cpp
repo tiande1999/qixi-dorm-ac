@@ -11,6 +11,7 @@ extern "C" {
 #include "wire_protocol.h"
 #include "execution_guard.h"
 #include "ir_profile.h"
+#include "sim_ir.h"
 
 constexpr uint8_t kIrTx = 14, kIrRx = 13, kLinkRx = 12, kLinkTx = 16;
 EspSoftwareSerial::UART linkPort;
@@ -27,6 +28,16 @@ bool firstCapture = false, secondCapture = false;
 uint32_t lastHost = 0, lastManualOp = 0, lastCapture = 0;
 uint8_t testPhase = 0;
 bool awaitingAttestation = false;
+uint32_t preparedVersion = 0;
+uint32_t retiredHosts[16] = {};
+uint8_t retiredCount = 0;
+String lastAcceptedHost;
+
+#if defined(QIXI_SIM_TX)
+constexpr bool kSimTxEnabled = true;
+#else
+constexpr bool kSimTxEnabled = false;
+#endif
 
 String hexId(uint32_t value) {
   char text[9]; snprintf(text, sizeof(text), "%08X", value); return String(text);
@@ -60,13 +71,14 @@ void fail(const char* reason, uint32_t id = 0) {
   Serial.printf("ERROR %s id=%u\n", reason, id);
 }
 
-bool transmit() {
+bool transmitSimulation() {
+  if (!kSimTxEnabled) return false;
   receiver.disableIRIn();
-  const bool result = profile.send(sender);
+  sender.sendNEC(kSimOff, 32);
   digitalWrite(kIrTx, LOW);
-  receiver.enableIRIn(); receiver.resume();
-  Serial.printf("IR_TX %s / actual AC state UNKNOWN\n", result ? "finished" : "failed");
-  return result;
+  receiver.enableIRIn();
+  receiver.resume();
+  return true;
 }
 
 void abortLearning() {
@@ -106,11 +118,7 @@ void learnCommand(const JsonDocument& doc) {
     profile.attestations = 0; testPhase = 0; awaitingAttestation = false;
     stage = secondCapture ? "TEST_ON" : (firstCapture ? "CAPTURE_2" : "CAPTURE_1");
   } else if (action == "test") {
-    if (!secondCapture || awaitingAttestation || testPhase >= 3) { fail("test_not_ready"); return; }
-    if (!transmit()) { fail("ir_send_failed"); return; }
-    awaitingAttestation = true;
-    stage = testPhase == 0 ? "CHECK_ON_TO_OFF" : testPhase == 1 ? "CHECK_STAYS_OFF" : "CHECK_OTHER_MODE";
-    lastError = "";
+    fail("real_tx_disabled");
   } else if (action == "confirm") {
     if (awaitingAttestation) {
       profile.attestations |= (1U << testPhase);
@@ -135,15 +143,23 @@ void handle(const JsonDocument& doc) {
   const uint32_t now = millis();
   if (type == "h") {
     if (!doc["q"].is<uint32_t>()) return;
-    if (host != hostId) {
+    if (host != lastAcceptedHost) {
+      const uint32_t candidate = strtoul(host.c_str(), nullptr, 16);
+      for (uint8_t i = 0; i < retiredCount; ++i)
+        if (candidate == retiredHosts[i]) return;
+      if (lastAcceptedHost.length()) {
+        if (retiredCount == 16) { fail("session_table_full"); return; }
+        retiredHosts[retiredCount++] = strtoul(lastAcceptedHost.c_str(), nullptr, 16);
+      }
+      lastAcceptedHost = host;
       guard.reset(); lastManualOp = 0;
       if (learning) abortLearning();
-      hostId = host;
     }
+    hostId = host;
     lastHost = now;
     StaticJsonDocument<512> ack;
     ack["v"] = 1; ack["t"] = "H"; ack["e"] = hostId; ack["s"] = bootId;
-    ack["q"] = doc["q"]; ack["ok"] = ready(); ack["p"] = profile.id;
+    ack["q"] = doc["q"]; ack["ok"] = ready(); ack["p"] = profile.id; ack["sim"] = kSimTxEnabled;
     ack["stage"] = stage; ack["err"] = lastError;
     writeFrame(linkPort, ack);
     return;
@@ -164,21 +180,28 @@ void handle(const JsonDocument& doc) {
   if (type == "L") { learnCommand(doc); return; }
   if (type == "X") { guard.cancel(); return; }
   const uint32_t id = doc["id"] | 0U;
-  if (!ready() || String(doc["p"] | "") != profile.id) { fail("unverified_profile", id); return; }
+  if (type != "P" && type != "C") return;
+  if (!kSimTxEnabled || String(doc["mode"] | "") != "SIM_AUTO" ||
+      String(doc["action"] | "") != "SIM_OFF" || !doc["sv"].is<uint32_t>()) {
+    fail("unsupported_action", id);
+    return;
+  }
+  const uint32_t stateVersion = doc["sv"].as<uint32_t>();
   if (type == "P") {
     const uint32_t token = os_random();
     if (!guard.prepare(id, token, now)) { fail("old_command", id); return; }
+    preparedVersion = stateVersion;
     StaticJsonDocument<384> ack;
     ack["v"] = 1; ack["t"] = "R"; ack["e"] = hostId; ack["s"] = bootId;
-    ack["id"] = id; ack["k"] = hexId(token);
+    ack["id"] = id; ack["k"] = hexId(token); ack["sv"] = preparedVersion;
     writeFrame(linkPort, ack);
   } else if (type == "C") {
     const String key = doc["k"] | "";
-    if (!validId(key) || !guard.commit(id, strtoul(key.c_str(), nullptr, 16), now)) {
+    if (stateVersion != preparedVersion || !validId(key) || !guard.commit(id, strtoul(key.c_str(), nullptr, 16), now)) {
       fail("expired_or_replayed", id); return;
     }
     // Nothing is queued. This is the only automatic infrared execution site.
-    if (transmit()) reply("A", id, "ir_tx_finished");
+    if (transmitSimulation()) reply("A", id, "ir_tx_finished");
     else fail("ir_send_failed", id);
   }
 }

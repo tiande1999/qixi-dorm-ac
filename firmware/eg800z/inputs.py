@@ -81,3 +81,56 @@ class Buttons:
                 del self.down[key]
                 self.long_sent.discard(key)
         return events
+
+
+class Ultrasonic:
+    """Convert timed echo samples into occupancy with hysteresis."""
+    def __init__(self, enter_mm, release_mm, period_ms, stale_ms):
+        if not 20 <= enter_mm < release_mm <= 4000 or not 60 <= period_ms < stale_ms:
+            raise ValueError("invalid ultrasonic calibration")
+        self.enter_mm = enter_mm
+        self.release_mm = release_mm
+        self.period_ms = period_ms
+        self.stale_ms = stale_ms
+        self.active = False
+        self.valid = False
+        self.last_sample = None
+
+    def due(self, now):
+        return self.last_sample is None or diff(now, self.last_sample) >= self.period_ms
+
+    def sample(self, echo_us, now):
+        self.last_sample = now
+        mm = echo_us * 343 // 2000 if type(echo_us) is int else None
+        self.valid = mm is not None and 20 <= mm <= 4000
+        if self.valid:
+            self.active = mm <= self.enter_mm if not self.active else mm < self.release_mm
+        return {"ms": now, "distance_mm": mm, "active": self.active, "valid": self.valid}
+
+    def healthy(self, now):
+        return self.valid and self.last_sample is not None and diff(now, self.last_sample) < self.stale_ms
+
+
+def make_echo_reader(ticks_us, ticks_diff, sleep_us):
+    """Candidate polling backend. Validate on the exact board before enabling."""
+    def read_echo(trigger, echo, timeout_us):
+        trigger.write(0)
+        if echo.read():
+            return None
+        sleep_us(2)
+        trigger.write(1)
+        sleep_us(10)
+        trigger.write(0)
+        deadline_start = ticks_us()
+        while not echo.read():
+            if ticks_diff(ticks_us(), deadline_start) >= timeout_us:
+                return None
+        high_start = ticks_us()
+        while echo.read():
+            if ticks_diff(ticks_us(), deadline_start) >= timeout_us:
+                return None
+        end = ticks_us()
+        if ticks_diff(end, deadline_start) >= timeout_us:
+            return None
+        return ticks_diff(end, high_start)
+    return read_echo
