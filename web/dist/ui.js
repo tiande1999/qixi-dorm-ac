@@ -46,3 +46,19 @@ export function formatCountdown(seconds) {
   const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
   return minutes + ':' + String(Math.floor(seconds % 60)).padStart(2, '0');
 }
+
+export function roomIllustration(state){
+ const six=state.roomCapacity===6;const beds=six?[[30,40],[225,40],[30,115],[225,115],[30,190],[225,190]]:[[30,42],[225,42],[30,154],[225,154]];
+ return `<svg class="room-map" viewBox="0 0 340 290" role="img" aria-label="${state.layoutExample?'户型示意，未读取实际房型':state.roomCapacity+' 人寝布局示意'}。床位不代表人员实际位置。"><defs><pattern id="floor" width="28" height="28" patternUnits="userSpaceOnUse"><path d="M28 0H0v28" fill="none" stroke="#dce8dc" stroke-width=".7"/></pattern><filter id="shadow"><feDropShadow dx="0" dy="5" stdDeviation="6" flood-color="#658474" flood-opacity=".12"/></filter></defs><rect x="13" y="17" width="314" height="252" rx="15" fill="#edf2e9" stroke="#d7e2d3"/><rect x="24" y="29" width="292" height="228" rx="8" fill="url(#floor)"/>
+ <path d="M27 119V29h286v228H192 M136 257H27V119" fill="none" stroke="#a9beb0" stroke-width="6" stroke-linejoin="round"/>
+ <path d="M113 29h102" stroke="#b8d6d0" stroke-width="9"/><path d="M113 29h102" stroke="#f8fcf5" stroke-width="3"/>
+ ${beds.map(([x,y],i)=>`<g class="map-bed" transform="translate(${x},${y}) scale(1,${six?.68:1})" filter="url(#shadow)"><rect x="9" y="2" width="64" height="86" rx="6" fill="#fffef9" stroke="#d4ddd0"/><rect x="15" y="8" width="52" height="19" rx="5" fill="#fff" stroke="#e2e8dc"/><rect x="12" y="33" width="58" height="49" rx="4" fill="${i===1?'#c0cdb5':'#d7e0cd'}"/><path d="M18 42h45" stroke="#f6f7ec" stroke-width="2"/></g>`).join('')}
+ <rect x="133" y="99" width="74" height="88" rx="12" fill="#ddc9a9" stroke="#c9b796"/><rect x="142" y="106" width="56" height="73" rx="6" fill="#e9d8bd"/>
+ <rect x="152" y="111" width="31" height="21" rx="2" fill="#f7f4eb"/><path d="M168 111v21" stroke="#d7cbb6"/>
+ <circle cx="173" cy="157" r="9" fill="#6c9873"/><path d="m166 158 7-10 6 9" fill="#8bb18c"/>
+ ${Array.from({length:state.roomCapacity},(_,i)=>{const x=i%2===0?119:220,y=(six?[80,80,150,150,223,223]:[90,90,200,200])[i];const occupied=state.trusted&&i<state.count;return `<g opacity="${occupied?1:.25}"><circle cx="${x}" cy="${y}" r="14" fill="${occupied?'#2e8063':'#a9bab0'}" stroke="#f6f8f0" stroke-width="3"/><circle cx="${x}" cy="${y-3}" r="4" fill="white"/><path d="M${x-6} ${y+7}a6 6 0 0 1 12 0" fill="white"/></g>`;}).join('')}
+ <path d="M137 257v-48a48 48 0 0 1 48 48" fill="none" stroke="#b8c8b9" stroke-width="1.5" stroke-dasharray="4 3"/><path d="M137 257 ${state.door===false?'v-49':'h49'}" stroke="${state.door==null?'#b8c8b9':'#a78d69'}" stroke-width="4"/>
+ <rect x="135" y="270" width="58" height="5" rx="2" fill="${state.trace?'#65bb87':'#a9d9bd'}"/><text x="164" y="288" font-size="10" text-anchor="middle" fill="#7b9082">入口 · A / B</text>
+ <rect x="142" y="41" width="56" height="13" rx="4" fill="white" stroke="#b5cabe"/><path d="M147 50h46" stroke="#9fbaa8"/><path d="M157 59q-4 5 0 10m13-10q-4 5 0 10m13-10q-4 5 0 10" fill="none" stroke="${state.ac==='running'?'#86bbaa':'transparent'}" stroke-width="2"/>
+ </svg>`;
+}

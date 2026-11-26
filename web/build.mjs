@@ -9,7 +9,7 @@ if (!['demo','live'].includes(mode)) throw new Error('Use build.mjs demo or buil
 const output = path.join(root,'..','artifacts','habitat-' + mode);
 await mkdir(output,{recursive:true});
 const demo = ['index.html','app.js','store.js','preferences.js','setup-ui.js','setup.css','phone.js','phone.css','phone-support.js','sw.js','manifest.webmanifest'];
-const live = ['index.html','live.js','live.css','config.js','provider.js'];
+const live = ['index.html','live.js','live.css','config.js','provider.js','guide.js'];
 const iconFiles = ['icon-192.png','icon-512.png','icon-maskable-512.png','apple-touch-icon.png'];
 const allowed = new Set([...(mode==='demo'?demo:live),'styles.css','ui.js','favicon.svg','icons','manifest.webmanifest','sw.js',...(mode==='live'?['model.js']:[])]);
 for (const entry of await readdir(output,{withFileTypes:true})) {
